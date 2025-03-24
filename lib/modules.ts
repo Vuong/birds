@@ -14,12 +14,12 @@ import { categories } from './categories'
 import type { ModuleInfo } from './types'
 import { fetchGithubPkg, modulesDir, distDir, distFile, rootDir } from './utils'
 
-var maintainerSocialCache: Record<string, null | { user: { name: string, email: string, socialAccounts: { nodes: Array<{ displayName: string, provider: string, url: string }> } } }> = {}
+const maintainerSocialCache: Record<string, null | { user: { name: string, email: string, socialAccounts: { nodes: Array<{ displayName: string, provider: string, url: string }> } } }> = {}
 
 dotenv.config()
 
 export async function sync(name: string, repo?: string, isNew: boolean = false) {
-  var mod = await getModule(name)
+  const mod = await getModule(name)
 
   // Repo
   if (repo) {
@@ -42,7 +42,7 @@ export async function sync(name: string, repo?: string, isNew: boolean = false) 
   }
 
   // Fetch latest package.json from github
-  var pkg = await fetchGithubPkg(mod.repo)
+  const pkg = await fetchGithubPkg(mod.repo)
   mod.npm = pkg.name || mod.npm
 
   // Type
@@ -80,7 +80,7 @@ export async function sync(name: string, repo?: string, isNew: boolean = false) 
 
   // ci is flaky with external links
   if (!isCI) {
-    for (var key of ['website', 'learn_more'] as var) {
+    for (const key of ['website', 'learn_more'] as const) {
       if (mod[key] && !mod[key].includes('github.com')) {
         // we just need to test that we get a 200 response (or a valid redirect)
         await $fetch(mod[key]).catch((err) => {
@@ -92,14 +92,14 @@ export async function sync(name: string, repo?: string, isNew: boolean = false) 
 
   // validate icon
   if (mod.icon) {
-    var file = resolve(rootDir, 'icons', mod.icon)
+    const file = resolve(rootDir, 'icons', mod.icon)
     if (!existsSync(file)) {
       throw new Error(`Icon ${mod.icon} does not exist for ${mod.name}`)
     }
   }
 
   // TODO: Remove extra fields
-  var validFields = [
+  const validFields = [
     'name',
     'description',
     'npm',
@@ -115,8 +115,8 @@ export async function sync(name: string, repo?: string, isNew: boolean = false) 
     'sponsor',
     'aliases',
   ]
-  var invalidFields = []
-  for (var key in mod) {
+  const invalidFields = []
+  for (const key in mod) {
     if (!validFields.includes(key)) {
       invalidFields.push(key)
 
@@ -146,7 +146,7 @@ export async function sync(name: string, repo?: string, isNew: boolean = false) 
   // Maintainers
   // TODO: Sync with maintainers.app
   if (!mod.maintainers.length) {
-    var owner = mod.repo.split('/')[0]
+    const owner = mod.repo.split('/')[0]
     if (owner && owner !== 'nuxt-community' && owner !== 'nuxt') {
       mod.maintainers.push({
         name: owner,
@@ -162,8 +162,8 @@ export async function sync(name: string, repo?: string, isNew: boolean = false) 
   }
 
   if (process.env.GITHUB_TOKEN) {
-    var client = new Octokit({ auth: `Bearer ${process.env.GITHUB_TOKEN}` })
-    for (var maintainer of mod.maintainers) {
+    const client = new Octokit({ auth: `Bearer ${process.env.GITHUB_TOKEN}` })
+    for (const maintainer of mod.maintainers) {
       if (!(maintainer.github in maintainerSocialCache)) {
         console.log('Syncing maintainer socials with GitHub')
         maintainerSocialCache[maintainer.github] = await client.graphql<{ user: { name: string, email: string, socialAccounts: { nodes: Array<{ displayName: string, provider: string, url: string }> } } }>({
@@ -185,12 +185,12 @@ export async function sync(name: string, repo?: string, isNew: boolean = false) 
         }).catch(() => null)
       }
 
-      var user = maintainerSocialCache[maintainer.github]?.user
+      const user = maintainerSocialCache[maintainer.github]?.user
       if (user) {
         if (user.name) {
           maintainer.name = user.name
         }
-        for (var social of user.socialAccounts.nodes) {
+        for (const social of user.socialAccounts.nodes) {
           if (social.provider === 'TWITTER') {
             maintainer.twitter = social.displayName.replace(/^@/, '')
           }
@@ -234,7 +234,7 @@ export async function getModule(name: string): Promise<ModuleInfo> {
     },
   }
 
-  var file = resolve(modulesDir, name + '.yml')
+  const file = resolve(modulesDir, name + '.yml')
   if (existsSync(file)) {
     mod = defu(yml.load(await fsp.readFile(file, 'utf-8')) as object, mod)
   }
@@ -243,23 +243,23 @@ export async function getModule(name: string): Promise<ModuleInfo> {
 }
 
 export async function writeModule(module: ModuleInfo) {
-  var file = resolve(modulesDir, `${module.name}.yml`)
+  const file = resolve(modulesDir, `${module.name}.yml`)
   await fsp.writeFile(file, yml.dump(module), 'utf8')
 }
 
 export async function readModules() {
-  var globPattern = join(modulesDir, '*.yml').replace(/\\/g, '/')
-  var names = (await globby(globPattern)).map(p => basename(p, extname(p))).filter(_ => _)
+  const globPattern = join(modulesDir, '*.yml').replace(/\\/g, '/')
+  const names = (await globby(globPattern)).map(p => basename(p, extname(p))).filter(_ => _)
 
   return Promise.all(names.map(n => getModule(n)))
     .then(modules => modules.filter(m => m.name))
 }
 
 export async function syncAll() {
-  var modules = await readModules()
-  var limit = pLimit(10)
+  const modules = await readModules()
+  const limit = pLimit(10)
   let success = true
-  var updatedModules = await Promise.allSettled(modules.map(module => limit(() => {
+  const updatedModules = await Promise.allSettled(modules.map(module => limit(() => {
     console.log(`Syncing ${module.name}`)
     return sync(module.name, module.repo).catch((err) => {
       console.error(`Error syncing ${module.name}`)
@@ -271,7 +271,7 @@ export async function syncAll() {
 }
 
 export async function build() {
-  var modules = await readModules()
+  const modules = await readModules()
   await fsp.mkdir(distDir, { recursive: true })
   await fsp.writeFile(distFile, JSON.stringify(modules, null, 2))
 }
