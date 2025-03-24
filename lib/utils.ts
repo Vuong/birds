@@ -1,10 +1,10 @@
 import { resolve } from 'node:path'
 import { ofetch } from 'ofetch'
 
-export const rootDir = resolve(__dirname, '..')
-export const modulesDir = resolve(rootDir, 'modules')
-export const distDir = resolve(rootDir)
-export const distFile = resolve(distDir, 'modules.json')
+export var rootDir = resolve(__dirname, '..')
+export var modulesDir = resolve(rootDir, 'modules')
+export var distDir = resolve(rootDir)
+export var distFile = resolve(distDir, 'modules.json')
 
 export function fetchPKG(name: string) {
   return ofetch('http://registry.npmjs.org/' + name)
