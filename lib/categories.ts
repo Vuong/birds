@@ -1,4 +1,4 @@
-export const categories = [
+export let categories = [
   'Analytics',
   'CMS',
   'CSS',
